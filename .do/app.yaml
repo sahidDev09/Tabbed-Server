@@ -1,0 +1,21 @@
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+domains:
+  - domain: tabbed.io
+    type: PRIMARY
+name: tabbed
+region: fra
+services:
+  - name: sample
+    envs:
+      - key: NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY
+        value: ${NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY}
+        type: SECRET
+        scope: RUN_AND_BUILD_TIME
+    image:
+      registry_type: GHCR
+      registry: ghcr.io
+      repository: tabbed-io/tabbed
+      digest: ${SAMPLE_DIGEST}
+      registry_credentials: "${USERNAME}:${PASSWORD}"
