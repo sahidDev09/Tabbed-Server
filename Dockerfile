@@ -1,14 +1,17 @@
 # syntax=docker.io/docker/dockerfile:1
 
+# Base image
 FROM node:lts-alpine AS base
 
-# Install dependencies only when needed
+# Install dependencies
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Copy package.json and lock files
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
 
+# Install dependencies
 RUN npm config set loglevel verbose
 
 RUN \
@@ -27,11 +30,13 @@ COPY . .
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+# Set environment variables
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-# Key Change 1: Use custom build command
+# Build command
 RUN npm run build:socket
+RUN npm run build
 
 # Production image
 FROM base AS runner
@@ -42,14 +47,16 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Copy necessary files from builder
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./standalone
+COPY --from=builder /app/.next/static ./static
+COPY --from=builder /app/node_modules ./node_modules  
 
-# Key Change 2: Copy compiled server file
-COPY --from=builder /app/dist/server.mjs ./dist/
+# Copy the compiled server file
+COPY --from=builder /app/dist/server.mjs ./dist/server.mjs
 
-# Key Change 3: Simplified process management
+# Set the user to 'nextjs'
 USER nextjs
 
 EXPOSE 3000
@@ -57,5 +64,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Key Change 4: Corrected startup command
+# Start the server
 CMD ["node", "dist/server.mjs"]
