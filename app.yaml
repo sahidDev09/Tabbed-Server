@@ -1,0 +1,36 @@
+name: mono-meets
+region: fra
+services:
+  - name: web
+    http_port: 3000
+    image:
+      registry_type: GHCR
+      registry: ghcr.io
+      repository: tabbed-io/mono-meets-web
+      tag: ${SHA}
+      registry_credentials: "${USERNAME}:${PASSWORD}"
+  - name: api
+    http_port: 3001
+    image:
+      registry_type: GHCR
+      registry: ghcr.io
+      repository: tabbed-io/mono-meets-api
+      tag: ${SHA}
+      registry_credentials: "${USERNAME}:${PASSWORD}"
+ingress:
+  rules:
+    - component:
+        name: api
+      match:
+        path:
+          prefix: /api
+    - component:
+        name: api
+      match:
+        path:
+          prefix: /socket.io
+    - component:
+        name: web
+      match:
+        path:
+          prefix: /
